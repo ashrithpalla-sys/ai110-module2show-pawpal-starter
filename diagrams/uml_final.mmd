@@ -1,0 +1,57 @@
+classDiagram
+    class Owner {
+        -name string
+        -available_time int
+        -preferences dict
+        -pets List~Pet~
+        +add_pet(pet Pet) void
+        +update_preferences(preferences dict) void
+        +get_all_tasks() List~Task~
+        +generate_schedule() Scheduler
+    }
+
+    class Pet {
+        -name string
+        -species string
+        -age int
+        -tasks List~Task~
+        +add_task(task Task) void
+        +remove_task(task Task) void
+        +get_tasks() List~Task~
+    }
+
+    class Task {
+        -title string
+        -duration int
+        -priority int
+        -due_time string
+        -recurring bool
+        -completed bool
+        -pet_name string
+        -recurrence string
+        -due_date date
+        +mark_complete() Optional~Task~
+        +create_next_occurrence() Optional~Task~
+        +update_priority(new_priority int) void
+        +conflicts_with(other_task Task) bool
+    }
+
+    class Scheduler {
+        -tasks List~Task~
+        -available_time int
+        -plan List~Task~
+        -skipped List~Tuple~
+        +prioritize_tasks() List~Task~
+        +complete_task(task Task) Optional~Task~
+        +sort_by_time() List~Task~
+        +filter_tasks(pet_name string, completed bool) List~Task~
+        +detect_conflicts() List~string~
+        +generate_daily_plan() List~Task~
+        +explain_schedule() string
+    }
+
+    Owner "1" --> "*" Pet : owns
+    Pet "1" --> "*" Task : has
+    Scheduler "1" --> "*" Task : schedules
+    Owner ..> Scheduler : creates
+    Task ..> Task : creates next occurrence

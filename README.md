@@ -12,6 +12,19 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 
 Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
 
+## Features
+
+- **Pet management** — Owners can add multiple pets (`Pet`), each with a name, species, and age, and every pet keeps its own list of care tasks.
+- **Task management** — Care tasks (`Task`) capture a title, duration, priority, due time, and optional recurrence, and can be added to or removed from a pet, marked complete, or have their priority updated.
+- **Schedule generation** — `Scheduler.generate_daily_plan()` greedily builds a day's plan by priority, skipping tasks that are already completed, don't fit in the owner's remaining available time, or conflict with an already-scheduled task — and `explain_schedule()` produces a human-readable summary of what was scheduled and why.
+- **Task sorting by time** — `Scheduler.sort_by_time()` returns all tasks ordered chronologically by due time, independent of priority, for an at-a-glance view of the day.
+- **Task filtering** — `Scheduler.filter_tasks()` filters tasks by pet and/or completion status, so callers can view one pet's tasks, only completed/incomplete tasks, or any combination.
+- **Conflict detection** — `Scheduler.detect_conflicts()` scans all tasks across every pet and returns clear warnings for any that share the same due time.
+- **Recurring daily/weekly tasks** — Completing a task with `"daily"` or `"weekly"` recurrence automatically generates its next occurrence with the due date advanced accordingly, while the completed task is kept in place as history.
+- **CLI demo** — `main.py` exercises the full object model end to end (adding pets/tasks, sorting, filtering, conflict detection, schedule generation, and recurrence) as a quick way to see the backend logic run without the UI.
+- **Streamlit interface** — `app.py` provides an interactive UI to add owners, pets, and tasks; filter and sort tasks; complete tasks (including spawning recurring occurrences); view conflict warnings; and generate and display the daily schedule.
+- **Automated pytest testing** — A pytest suite (`tests/test_pawpal.py`) covers the core scheduling behaviors, including task completion, sorting, recurring task creation, and conflict detection.
+
 ## What you will build
 
 Your final app should:
@@ -93,17 +106,27 @@ Sample test output:
 ```
 # Paste your pytest output here
 ```
-Running pytest with args: ['-p', 'vscode_pytest', '--rootdir=/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter', '/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter/tests/test_pawpal.py::test_mark_complete', '/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter/tests/test_pawpal.py::test_add_task_to_pet']
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.13, pytest-9.1.1, pluggy-1.6.0
 rootdir: /Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter
 plugins: anyio-4.14.0
-collected 2 items
+collected 10 items
 
-tests/test_pawpal.py ..                                                  [100%]
+tests/test_pawpal.py ..........                                          [100%]
 
-============================== 2 passed in 0.01s ===============================
+============================== 10 passed in 0.01s ==============================
 Finished running tests!
+
+Test Coverage
+
+The automated tests verify:
+
+Task completion updates the task's status correctly.
+  Pets can successfully add and store tasks.
+  Tasks are sorted into chronological order.
+  Daily recurring tasks generate the next occurrence automatically.
+  Scheduling conflicts are detected when multiple tasks share the same scheduled time.
+Confidence Level: 4/5 stars --> The test suite covers the application's most important scheduling behaviors, including sorting, recurring tasks, and conflict detection. Additional tests for more complex scheduling scenarios and user interactions would further improve reliability.
 
 ## 📐 Smarter Scheduling
 
@@ -118,10 +141,12 @@ Finished running tests!
 
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. The user starts by entering basic owner information and creating a profile for their pets. Each pet is stored in the system and can have its own set of care tasks.
+2. The user adds pet care tasks such as feeding, walks, medication, grooming, or enrichment activities. Each task includes details like duration, priority, scheduled time, and whether it is recurring.
+3. The user views the generated daily schedule. The Scheduler organizes tasks automatically by time and uses the owner's available time to create a manageable care plan.
+4. The app highlights important scheduling information, including task priorities, completed tasks, and any conflicts detected when multiple tasks are scheduled for the same time.
+5. The user can filter tasks by pet or completion status to quickly find specific activities and manage their daily routine.
+6. When a recurring task, such as a daily medication reminder, is completed, the system automatically creates the next occurrence so the pet's routine continues without manual re-entry.
+7. The CLI demo (main.py) demonstrates the backend functionality by creating pets and tasks, generating schedules, sorting tasks, and displaying conflict warnings directly in the terminal.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

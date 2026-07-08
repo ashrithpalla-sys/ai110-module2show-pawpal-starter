@@ -93,28 +93,67 @@ else:
     st.info("Add a pet first before creating tasks.")
 
 st.markdown("### Your Pets & Tasks")
-if owner.pets:
-    for pet in owner.pets:
-        with st.expander(f"{pet.name} ({pet.species}, age {pet.age})", expanded=True):
-            tasks = pet.get_tasks()
-            if tasks:
-                st.table(
-                    [
-                        {
-                            "Title": task.title,
-                            "Duration (min)": task.duration,
-                            "Priority": task.priority,
-                            "Due": task.due_time,
-                            "Recurring": task.recurring,
-                            "Completed": task.completed,
-                        }
-                        for task in tasks
-                    ]
-                )
-            else:
-                st.caption("No tasks yet.")
-else:
+
+if not owner.pets:
     st.info("No pets yet. Add one above.")
+elif not owner.get_all_tasks():
+    st.info("No tasks yet. Add one above.")
+else:
+    # A Scheduler built over every pet's tasks powers filtering, sorting, and
+    # conflict detection here — the UI never touches task lists directly.
+    all_tasks_scheduler = Scheduler(tasks=owner.get_all_tasks())
+
+    for warning in all_tasks_scheduler.detect_conflicts():
+        st.warning(warning)
+
+    filter_col1, filter_col2 = st.columns(2)
+    with filter_col1:
+        pet_filter = st.selectbox("Filter by pet", ["All pets"] + [pet.name for pet in owner.pets])
+    with filter_col2:
+        status_filter = st.selectbox("Filter by status", ["All", "Completed", "Incomplete"])
+
+    filter_pet_name = None if pet_filter == "All pets" else pet_filter
+    filter_completed = {"All": None, "Completed": True, "Incomplete": False}[status_filter]
+
+    filtered_tasks = all_tasks_scheduler.filter_tasks(pet_name=filter_pet_name, completed=filter_completed)
+    visible_tasks = Scheduler(tasks=filtered_tasks).sort_by_time()
+
+    if visible_tasks:
+        st.table(
+            [
+                {
+                    "Pet": task.pet_name,
+                    "Title": task.title,
+                    "Due": task.due_time,
+                    "Duration (min)": task.duration,
+                    "Priority": task.priority,
+                    "Recurring": task.recurring,
+                    "Completed": task.completed,
+                }
+                for task in visible_tasks
+            ]
+        )
+    else:
+        st.caption("No tasks match the selected filters.")
+
+    incomplete_tasks = [task for task in visible_tasks if not task.completed]
+    if incomplete_tasks:
+        st.markdown("#### Complete a Task")
+        task_labels = [f"{task.pet_name}: {task.title} ({task.due_time})" for task in incomplete_tasks]
+        selected_label = st.selectbox("Task", task_labels, key="complete_task_select")
+
+        if st.button("Mark Complete"):
+            selected_task = incomplete_tasks[task_labels.index(selected_label)]
+            next_task = selected_task.mark_complete()
+
+            owning_pet = next(pet for pet in owner.pets if pet.name == selected_task.pet_name)
+            if next_task is not None:
+                owning_pet.add_task(next_task)
+
+            message = f"Marked '{selected_task.title}' complete for {selected_task.pet_name}."
+            if next_task is not None:
+                message += f" Next occurrence scheduled for {next_task.due_date}."
+            st.success(message)
 
 st.divider()
 
@@ -125,5 +164,25 @@ available_time = st.number_input(
 owner.available_time = int(available_time)
 
 if st.button("Generate schedule"):
-    scheduler = owner.generate_schedule()
+    scheduler = Scheduler(tasks=owner.get_all_tasks(), available_time=owner.available_time)
+    plan = scheduler.generate_daily_plan()
+
+    if plan:
+        st.table(
+            [
+                {
+                    "Pet": task.pet_name,
+                    "Title": task.title,
+                    "Due": task.due_time,
+                    "Duration (min)": task.duration,
+                    "Priority": task.priority,
+                }
+                for task in plan
+            ]
+        )
+        st.success(f"Scheduled {len(plan)} task(s) within {owner.available_time} available minutes.")
+    else:
+        st.info("No tasks could be scheduled with the current available time.")
+
+    st.markdown("#### Explanation")
     st.code(scheduler.explain_schedule())
