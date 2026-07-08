@@ -8,12 +8,15 @@ that fits within an owner's available time, and explains its reasoning.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 # Reference date used only to give due_time strings ("HH:MM") a full
 # datetime so time-window arithmetic (subtraction, comparison) works.
 _REFERENCE_DATE = datetime(2000, 1, 1)
+
+# How far a recurring task's due_date moves forward once it's completed.
+_RECURRENCE_INTERVALS = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
 
 
 @dataclass
@@ -26,10 +29,35 @@ class Task:
     due_time: str
     recurring: bool
     completed: bool = False
+    pet_name: Optional[str] = None
+    recurrence: Optional[str] = None
+    due_date: date = field(default_factory=date.today)
 
-    def mark_complete(self) -> None:
-        """Mark this task as completed."""
+    def __post_init__(self) -> None:
+        if self.recurrence not in (None, "daily", "weekly"):
+            raise ValueError(f'recurrence must be "daily", "weekly", or None, got {self.recurrence!r}')
+
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task completed and return its next occurrence if it recurs, else None."""
         self.completed = True
+        return self.create_next_occurrence()
+
+    def create_next_occurrence(self) -> Optional["Task"]:
+        """Return a new Task with due_date advanced by the recurrence interval, or None if not recurring."""
+        interval = _RECURRENCE_INTERVALS.get(self.recurrence)
+        if interval is None:
+            return None
+
+        return Task(
+            title=self.title,
+            duration=self.duration,
+            priority=self.priority,
+            due_time=self.due_time,
+            recurring=self.recurring,
+            pet_name=self.pet_name,
+            recurrence=self.recurrence,
+            due_date=self.due_date + interval,
+        )
 
     def update_priority(self, new_priority: int) -> None:
         """Update the priority level of this task."""
@@ -63,6 +91,7 @@ class Pet:
 
     def add_task(self, task: Task) -> None:
         """Add a new care task to this pet's task list."""
+        task.pet_name = self.name
         self.tasks.append(task)
 
     def remove_task(self, task: Task) -> None:
@@ -125,14 +154,41 @@ class Scheduler:
         self.tasks.sort(key=lambda task: (-task.priority, task.due_time))
         return self.tasks
 
-    def detect_conflicts(self) -> list[tuple[Task, Task]]:
-        """Return all pairs of tasks whose time windows overlap."""
-        conflicts: list[tuple[Task, Task]] = []
+    def complete_task(self, task: Task) -> Optional[Task]:
+        """Mark a task complete and add its next occurrence to this scheduler if it recurs."""
+        next_task = task.mark_complete()
+        if next_task is not None:
+            self.tasks.append(next_task)
+        return next_task
+
+    def sort_by_time(self) -> list[Task]:
+        """Return all tasks sorted chronologically by due_time."""
+        return sorted(self.tasks, key=lambda task: task.due_time)
+
+    def filter_tasks(
+        self,
+        pet_name: Optional[str] = None,
+        completed: Optional[bool] = None,
+    ) -> list[Task]:
+        """Return tasks matching the given pet name and/or completion status."""
+        return [
+            task
+            for task in self.tasks
+            if (pet_name is None or task.pet_name == pet_name)
+            and (completed is None or task.completed == completed)
+        ]
+
+    def detect_conflicts(self) -> list[str]:
+        """Return a warning string for each pair of tasks due at the exact same due_time."""
+        warnings: list[str] = []
         for i, task_a in enumerate(self.tasks):
             for task_b in self.tasks[i + 1:]:
-                if task_a.conflicts_with(task_b):
-                    conflicts.append((task_a, task_b))
-        return conflicts
+                if task_a.due_time == task_b.due_time:
+                    warnings.append(
+                        f'Conflict: "{task_a.title}" and "{task_b.title}" '
+                        f"are both due at {task_a.due_time}."
+                    )
+        return warnings
 
     def generate_daily_plan(self) -> list[Task]:
         """Greedily build a daily plan that fits within available_time, skipping completed, over-budget, or conflicting tasks."""

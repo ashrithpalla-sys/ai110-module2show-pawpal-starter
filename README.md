@@ -93,17 +93,26 @@ Sample test output:
 ```
 # Paste your pytest output here
 ```
+Running pytest with args: ['-p', 'vscode_pytest', '--rootdir=/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter', '/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter/tests/test_pawpal.py::test_mark_complete', '/Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter/tests/test_pawpal.py::test_add_task_to_pet']
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/ashrithpalla/Desktop/cp-AI/ai110-module2show-pawpal-starter
+plugins: anyio-4.14.0
+collected 2 items
+
+tests/test_pawpal.py ..                                                  [100%]
+
+============================== 2 passed in 0.01s ===============================
+Finished running tests!
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Sort by time | `Scheduler.sort_by_time()` | Returns all tasks ordered chronologically by `due_time`, independent of priority — useful for a simple "what's my day look like" view. |
+| Filter by pet / status | `Scheduler.filter_tasks()` | Returns tasks matching an optional `pet_name` and/or `completed` flag, so callers can ask for one pet's tasks, only completed tasks, or both, without writing ad-hoc list comprehensions. |
+| Conflict detection | `Scheduler.detect_conflicts()` | Scans all tasks for pairs sharing the exact same `due_time` and returns a list of human-readable warning strings (e.g. `Conflict: "Morning Walk" and "Grooming" are both due at 09:00.`) rather than raising — works across any pets sharing the scheduler. |
+| Recurring tasks | `Task.mark_complete()`, `Task.create_next_occurrence()`, `Scheduler.complete_task()` | Completing a task with a `recurrence` of `"daily"` or `"weekly"` automatically generates its next occurrence with the `due_date` advanced by one or seven days. The completed task stays in place as history; `Scheduler.complete_task()` adds the new occurrence back into the scheduler and returns it. |
 
 ## 📸 Demo Walkthrough
 
