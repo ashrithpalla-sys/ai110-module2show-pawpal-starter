@@ -54,6 +54,30 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 #   ...
 ```
 
+=================================
+        Today's Schedule
+=================================
+Owner: Alex
+Available Time: 120 minutes
+
+Pet: Buddy
+- Feed Buddy (8:00 AM) | Priority: 3 | 10 min
+- Morning Walk (9:00 AM) | Priority: 5 | 30 min
+
+Pet: Luna
+- Playtime (5:00 PM) | Priority: 2 | 20 min
+- Give Medication (7:30 PM) | Priority: 5 | 5 min
+
+=================================
+
+Daily Schedule Explanation:
+
+Scheduled tasks (in order):
+  1. Morning Walk — priority 5, due 09:00, 30 min
+  2. Give Medication — priority 5, due 19:30, 5 min
+  3. Feed Buddy — priority 3, due 08:00, 10 min
+  4. Playtime — priority 2, due 17:00, 20 min
+
 ## 🧪 Testing PawPal+
 
 ```bash
